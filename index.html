@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f2ff">
+<title>同频率｜三人同词相遇</title>
+<style>
+:root{--bg:#f7f2ff;--card:#fff;--ink:#302744;--muted:#827992;--pink:#ff8fb3;--purple:#8e79d6;--line:#eee7f7;--green:#3b9d78}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#fff7fb,#f2efff 65%,#eef8ff);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans SC",sans-serif;min-height:100vh}
+main{width:min(680px,100%);margin:auto;padding:24px 17px 44px}.brand{text-align:center;margin:12px 0 22px}.brand .logo{font-size:42px}.brand h1{font-size:29px;margin:4px 0}.brand p{margin:0;color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;margin:14px 0;box-shadow:0 9px 28px #66518a0d}
+h2{font-size:18px;margin:0 0 14px}label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+input{width:100%;border:1px solid var(--line);border-radius:13px;padding:14px;font-size:16px;background:#fdfcff;color:var(--ink);outline:none}input:focus{border-color:var(--purple)}
+button{border:0;border-radius:14px;padding:13px 17px;font-size:15px;font-weight:700;cursor:pointer;background:var(--purple);color:white;width:100%;margin-top:10px}
+button.secondary{background:#f2edfb;color:#65558c}button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;gap:9px}.row>*{flex:1}
+.hidden{display:none!important}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;background:#f4efff;color:#7665aa;padding:6px 10px;border-radius:99px;font-size:12px}
+.roomcode{font-size:32px;letter-spacing:7px;font-weight:800;text-align:center;color:#7864c0;margin:8px}
+.players{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.player{padding:12px 7px;background:#faf8ff;border:1px solid var(--line);border-radius:14px;text-align:center;font-size:13px;min-width:0;overflow-wrap:anywhere}.player strong{display:block;font-size:14px;margin-bottom:5px}.status{font-size:11px;color:var(--muted)}.status.done{color:var(--green)}
+.question{font-size:27px;font-weight:800;text-align:center;line-height:1.4;padding:18px 5px}.sub{text-align:center;color:var(--muted);font-size:13px}
+.answerbox{display:flex;gap:8px}.answerbox input{min-width:0}.answerbox button{width:105px;flex:none;margin:0}
+.answers{display:grid;gap:8px}.answer{display:flex;justify-content:space-between;gap:10px;background:#faf8ff;padding:12px 14px;border-radius:13px}.answer b{overflow-wrap:anywhere}.scoreline{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}.scoreline:last-child{border:0}
+.notice{background:#fff8e9;border-radius:12px;padding:11px 13px;font-size:13px;color:#82652c;line-height:1.6}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#302744;color:white;padding:11px 16px;border-radius:99px;font-size:13px;max-width:90%;z-index:9}
+footer{text-align:center;color:#a49bb1;font-size:11px;margin:22px}
+</style>
+</head>
+<body><main>
+<header class="brand"><div class="logo">🎀</div><h1>同频率</h1><p>三个人的脑电波，能不能撞在同一个词上？</p></header>
+<section id="setup" class="card">
+<h2>进入游戏</h2>
+<label>你的昵称</label><input id="nickname" maxlength="10" placeholder="给自己取个名字">
+<div class="row"><button id="createBtn">创建房间</button><button class="secondary" id="showJoin">加入房间</button></div>
+<div id="joinArea" class="hidden"><label>房间码</label><input id="joinCode" maxlength="5" placeholder="输入 5 位房间码" autocapitalize="characters"><button id="joinBtn">加入这间房</button></div>
+<p class="muted">每间房最多 3 人。无需注册账号，昵称即可加入。</p>
+</section>
+
+<section id="game" class="hidden">
+<div class="card">
+<div class="row" style="align-items:center"><div><span class="pill" id="roundPill">第 1 轮</span></div><div style="text-align:right" class="muted" id="roomLabel"></div></div>
+<div class="roomcode" id="codeDisplay"></div>
+<p class="sub">把房间码分享给另外两位玩家</p>
+<div class="players" id="players"></div>
+</div>
+<div class="card">
+<h2>本轮题目</h2><div class="question" id="question">等待房主开始…</div>
+<p class="sub" id="roundHint">三个人各自输入一个想到的词，提交后不能修改</p>
+<div id="answerArea" class="hidden"><div class="answerbox"><input id="answerInput" maxlength="20" placeholder="输入你的答案"><button id="submitBtn">提交</button></div><p class="muted" id="submitState"></p></div>
+<div id="waiting" class="notice">等待房主开始本轮。</div>
+<div id="revealArea" class="hidden"><h2 style="margin-top:16px">答案揭晓</h2><div class="answers" id="answers"></div><p id="resultText" style="text-align:center;font-weight:800;margin:16px 0 4px"></p></div>
+<div id="hostControls" class="hidden"><button id="startBtn">开始本轮</button><button class="secondary hidden" id="nextBtn">下一轮</button></div>
+</div>
+<div class="card"><h2>默契排行榜</h2><div id="scores"></div></div>
+<div class="row"><button class="secondary" id="copyBtn">复制邀请信息</button><button class="secondary" id="leaveBtn">退出房间</button></div>
+</section>
+<footer>同频率 · 和朋友一起玩才有意思</footer>
+</main><div id="toast" class="hidden"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getDatabase, ref, get, set, update, onValue, runTransaction, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+// 第一次部署时，把 Firebase 控制台提供的配置粘贴到这里：
+const firebaseConfig = {
+  apiKey: "AIzaSyAWzT3KR0dz4N6FSvZPk2m3nn7GGV4UiSZM",
+  authDomain: "tongpin-game.firebaseapp.com",
+  databaseURL: "https://tongpin-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "tongpin-game",
+  storageBucket: "tongpin-game.firebasestorage.app",
+  messagingSenderId: "664836987560",
+  appId: "1:664836987560:web:bb4afe97c47b6cb635809d"
+};
+const questions = ["说到夏天，你想到什么？","最适合冬天的饮料？","一种很可爱的动物？","最常见的早餐？","一种让人开心的颜色？","想到海边会想到什么？","最适合熬夜吃的东西？","一种有香味的花？","最想收到的礼物？","一种经典的零食？","最有安全感的天气？","一种会飞的动物？","想到校园会想到什么？","一种圆形的食物？","最适合拍照的地方？","一种很吵的东西？","最想去的旅行目的地类型？","一种让人放松的声音？","最常用的社交软件？","一种甜品？"];
+const $=id=>document.getElementById(id);
+let db,uid,roomCode,myName,isHost=false,roomData=null,unsubscribe=null,toastTimer;
+function toast(s){$("toast").textContent=s;$("toast").classList.remove("hidden");clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").classList.add("hidden"),2400)}
+function code(){return Math.random().toString(36).slice(2,7).toUpperCase()}
+function clean(s){return (s||"").trim().replace(/\s+/g," ")}
+function roomRef(){return ref(db,"rooms/"+roomCode)}
+function render(data){
+ roomData=data;if(!data)return;
+ $("roundPill").textContent="第 "+(data.round||1)+" 轮";$("roomLabel").textContent="房间";
+ $("codeDisplay").textContent=roomCode;
+ const ids=Object.keys(data.players||{});$("players").innerHTML="";
+ ids.forEach(id=>{const p=data.players[id],done=!!(data.answers&&data.answers[id]);const el=document.createElement("div");el.className="player";el.innerHTML=`<strong></strong><span class="status ${done?"done":""}"></span>`;el.querySelector("strong").textContent=p.name;el.querySelector(".status").textContent=done?"已提交":"思考中";$("players").append(el)});
+ const started=!!data.question,allDone=ids.length===3&&ids.every(id=>data.answers&&data.answers[id]);
+ $("question").textContent=started?data.question:"等待房主开始…";
+ $("waiting").classList.toggle("hidden",started);
+ $("answerArea").classList.toggle("hidden",!started||allDone||!!(data.answers&&data.answers[uid]));
+ $("submitState").textContent=data.answers&&data.answers[uid]?"已提交，等待揭晓":"";
+ $("revealArea").classList.toggle("hidden",!allDone);
+ $("hostControls").classList.toggle("hidden",!isHost);
+ $("startBtn").classList.toggle("hidden",started);
+ $("nextBtn").classList.toggle("hidden",!allDone);
+ if(allDone){
+   $("answers").innerHTML="";let vals=[];
+   ids.forEach(id=>{const p=data.players[id],a=data.answers[id];vals.push({id,name:p.name,answer:a});const el=document.createElement("div");el.className="answer";const b=document.createElement("b"),span=document.createElement("span");b.textContent=p.name;span.textContent=a;el.append(b,span);$("answers").append(el)});
+   const groups={};vals.forEach(v=>{const k=v.answer.toLocaleLowerCase();(groups[k]??=[]).push(v)});
+   let result="本轮各有想法！";let gained={};
+   Object.values(groups).forEach(g=>{if(g.length===3){result="三人同词！完美相遇 🎉";g.forEach(v=>gained[v.id]=3)}else if(g.length===2){result="双人相遇！默契 +1 💗";g.forEach(v=>gained[v.id]=1)}});
+   $("resultText").textContent=result;
+   // 房主只负责给本轮计分一次
+   if(isHost&&!data.scored){const scores={...(data.scores||{})};ids.forEach(id=>scores[id]=(scores[id]||0)+(gained[id]||0));update(roomRef(),{scores,scored:true}).catch(()=>{});}
+ }
+ const scores=data.scores||{};$("scores").innerHTML="";
+ ids.sort((a,b)=>(scores[b]||0)-(scores[a]||0)).forEach(id=>{const el=document.createElement("div");el.className="scoreline";const a=document.createElement("span"),b=document.createElement("b");a.textContent=data.players[id].name;b.textContent=(scores[id]||0)+" 分";el.append(a,b);$("scores").append(el)});
+}
+async function enter(codeValue,create=false){
+ roomCode=codeValue;myName=clean($("nickname").value);if(!myName){toast("先填一个昵称");return}
+ const rr=ref(db,"rooms/"+roomCode);const snap=await get(rr);
+ if(create){if(snap.exists()){toast("房间码冲突，重新创建");return}isHost=true;await set(rr,{host:uid,round:1,players:{[uid]:{name:myName}},answers:{},scores:{[uid]:0},scored:false,question:null,createdAt:Date.now()})}
+ else{if(!snap.exists()){toast("没有找到这个房间");return}const d=snap.val();if(d.players&&d.players[uid]){}else{if(Object.keys(d.players||{}).length>=3){toast("房间已满，最多三个人");return}await update(rr,{["players/"+uid]:{name:myName},["scores/"+uid]:0})}isHost=d.host===uid}
+ $("setup").classList.add("hidden");$("game").classList.remove("hidden");
+ if(unsubscribe)unsubscribe();unsubscribe=onValue(rr,s=>{if(s.exists())render(s.val());else toast("房间已关闭")});
+}
+$("showJoin").onclick=()=>$("joinArea").classList.toggle("hidden");
+$("createBtn").onclick=async()=>{try{await enter(code(),true)}catch(e){toast("创建失败："+e.message)}};
+$("joinBtn").onclick=async()=>{const c=clean($("joinCode").value).toUpperCase();if(c.length!==5){toast("请输入 5 位房间码");return}try{await enter(c,false)}catch(e){toast("加入失败："+e.message)}};
+$("submitBtn").onclick=async()=>{const a=clean($("answerInput").value);if(!a){toast("先写下你的答案");return}try{await set(ref(db,`rooms/${roomCode}/answers/${uid}`),a);$("answerInput").value="";}catch(e){toast("提交失败："+e.message)}};
+$("startBtn").onclick=async()=>{if(Object.keys(roomData.players||{}).length!==3){toast("等三个人都加入再开始");return}const q=questions[Math.floor(Math.random()*questions.length)];await update(roomRef(),{question:q,answers:{},scored:false})};
+$("nextBtn").onclick=async()=>{await update(roomRef(),{round:(roomData.round||1)+1,question:null,answers:{},scored:false})};
+$("copyBtn").onclick=async()=>{const s=`来玩同频率！房间码：${roomCode}`;try{await navigator.clipboard.writeText(s);toast("邀请信息已复制")}catch{toast(s)}};
+$("leaveBtn").onclick=()=>{if(unsubscribe)unsubscribe();$("game").classList.add("hidden");$("setup").classList.remove("hidden");roomCode=null;roomData=null};
+try{
+ if(firebaseConfig.apiKey.startsWith("在这里")){toast("先完成 Firebase 配置，详见随附说明");}
+ else{const app=initializeApp(firebaseConfig);db=getDatabase(app);const auth=getAuth(app);const cred=await signInAnonymously(auth);uid=cred.user.uid;}
+}catch(e){console.error(e);toast("Firebase 初始化失败，请检查配置和匿名登录设置")}
+</script></body></html>
